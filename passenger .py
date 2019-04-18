@@ -9,4 +9,3 @@ class Passenger:
         self.start_floor = start_floor
         self.destination_floor = destination_floor
         self.boarded = False
-        self.direction = None
