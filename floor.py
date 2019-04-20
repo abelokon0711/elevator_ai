@@ -15,9 +15,7 @@ class Floor:
         self.waiting_queue.append(Passenger)
 
     def remove_person_from_waiting_queue(self, Passenger):
-        for p in self.waiting_queue
+        for p in self.waiting_queue:
             if p.id == Passenger.id
                 self.waiting_queue.remove(p)
-
-        
 
