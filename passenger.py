@@ -1,11 +1,21 @@
+from random import randint
+
+# implement https://uinames.com/ API
+
 
 class Passenger:
 
-    def __init__(self, id, start_floor, destination_floor, weight=0):
-        if type(destination_floor) is not int:
-            raise TypeError('destination_floor has to be an int')
+    def __init__(self, environment, weight=0):
+        self.environment = environment
+        self.id = self.environment.get_Highest_id() + 1
+        self.start_floor = randint(0, self.environment.number_of_floors - 1)
+        self.destination_floor = randint(
+            0, self.environment.number_of_floors - 1)
+        if self.start_floor == self.destination_floor:
+            self.destination_floor = (
+                self.destination_floor + 1) % self.environment.number_of_floors
 
-        self.id = id
-        self.start_floor = start_floor
-        self.destination_floor = destination_floor
         self.boarded = False
+
+    def tick(self):
+        pass
