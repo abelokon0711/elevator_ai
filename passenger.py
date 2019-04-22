@@ -15,7 +15,6 @@ class Passenger:
             self.destination_floor = (
                 self.destination_floor + 1) % self.environment.number_of_floors
 
-        self.boarded = False
 
     def tick(self):
         pass

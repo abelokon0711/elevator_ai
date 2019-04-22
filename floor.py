@@ -12,14 +12,16 @@ class Floor:
 
         self.floor_id = floor_id
         self.waiting_queue = []
+        self.passengers_at_target_list = []
 
     def add_person_to_waiting_queue(self, Passenger):
         self.waiting_queue.append(Passenger)
 
-    def remove_person_from_waiting_queue(self, Passenger):
-        for p in self.waiting_queue:
-            if p.id == Passenger.id:
-                self.waiting_queue.remove(p)
+    def remove_first_person_from_waiting_queue(self, Passenger):
+        self.waiting_queue.pop(0)
+    
+    def add_passenger_to_target_list(self, Passenger):
+        self.passengers_at_target_list.append(Passenger)
 
     def tick(self):
         pass

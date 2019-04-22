@@ -21,7 +21,37 @@ class Elevator:
         self.current_floor = current_floor
         self.destination_floor = None
         self.capacity = capacity
-        self.people_in_elevator = 0
+        self.passenger_in_elevator = []
+
+    def is_passenger_waiting_on_current_floor(self):
+        if ( len(self.environment.floors[self.current_floor].waiting_queue) > 0 ):
+            return True
+        else:
+            return False
+
+    def is_elevator_empty(self):
+        if (len(self.passenger_in_elevator) == 0):
+            return True
+        else:
+            return False
+
+    def is_elevator_full(self):
+        if (len(self.passenger_in_elevator) == self.capacity):
+            return True
+        else:
+            return False
+
+    def add_passenger_from_current_floor_to_elevator(self):
+        if self.is_passenger_waiting_on_current_floor:
+            self.passenger_in_elevator.append(self.environment.floors[self.current_floor].waiting_queue[0])
+            self.environment.floors[self.current_floor].remove_first_person_from_waiting_queue()
+    
+    def transfer_passenger_from_elevator_to_current_floor(self):
+        if not self.is_elevator_empty:
+            for p in self.passenger_in_elevator:
+                if p.destination_floor == self.current_floor:
+                    self.environment.floors[self.current_floor].add_passenger_to_target_list(p)
+                    self.passenger_in_elevator.remove(p)
 
     def go_up(self):
         if not self.current_floor < self.environment.number_of_floors:
