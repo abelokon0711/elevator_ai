@@ -3,22 +3,51 @@ from tkinter import *
  
 class Graphics:
 
+    def __init__(self, env):
+        self.c = None
+        self.environment = env
+        self.cv_width = 600
+        self.cv_height = 800
+        self.padding = 100
+        self.floor_margin = (self.cv_height-self.padding) / self.environment.number_of_floors
+        self.floor_pos = []
 
-    def start():
+    def start(self):
         master = Tk()
+        master.title("Aufzug AI Simulation")
 
-        canvas_width = 500
-        canvas_height = 500
-        w = Canvas(master, 
-                   width=canvas_width,
-                   height=canvas_height)
-        w.pack()
+        self.c = Canvas(master, 
+                   width=self.cv_width,
+                   height=self.cv_height)
+        self.c.pack()
 
-        y = int(canvas_height / 2)
-        w.create_line(0, y, canvas_width, y, fill="#476042")
-
-
+        self.generate_floors()
+        self.floor_pos.reverse()
         mainloop()
 
-    def tick():
-        pass
+    def tick(self):
+        self.c.delete("all")
+        self.draw_environment()
+
+    
+    def generate_floors(self):
+
+        for x in range(self.environment.number_of_floors):
+            self.floor_pos.append([self.cv_width / 2, self.padding + self.floor_margin * x, self.cv_width, self.padding + self.floor_margin * x])
+
+
+    def draw_environment(self):
+        # Draw Floors
+        for x in range(len(self.floor_pos)):
+            self.c.create_line(self.floor_pos[x][0], self.floor_pos[x][1], self.floor_pos[x][2], self.floor_pos[x][3], fill="#000000")
+        # Draw Elevators
+        for x in range(len( self.environment.elevators)):
+            x1 = self.floor_pos[self.environment.elevators[x].current_floor][0] + (x*60) + 10
+            x2 = x1 + 50
+            y2 = self.floor_pos[ self.environment.elevators[x].current_floor][1]
+            y1 = y2 - (self.floor_margin / 2)
+            self.c.create_rectangle(x1,y1,x2,y2, fill="#ff0000") #create_rectangle(x0, y0, x1, y1, option, ...)
+
+            
+
+        

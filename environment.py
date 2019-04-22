@@ -16,7 +16,7 @@ class Environment:
 
     # LISTS
 
-    def __init__(self, floors=6, elevators=1):
+    def __init__(self, floors=6, elevators=2):
         self.generator = Generator(self)
         self.clock = 0
         self.floors = []
@@ -46,6 +46,7 @@ class Environment:
     def tick(self):
         # TODO: Send current state to Agent
         self.generator.tick()
+        self.elevators[0].go_up()
         for elevator in self.elevators:
             elevator.tick()
         for floor in self.floors:

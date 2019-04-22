@@ -4,7 +4,8 @@ import time
 import threading
 
 env = Environment()
-t = threading.Thread(target=Graphics.start)
+gra = Graphics(env)
+t = threading.Thread(target=gra.start)
 t.start()
 
 
@@ -12,10 +13,12 @@ try:
     while True:
         time.sleep(1)
         env.tick()
-        Graphics.tick()
+        gra.tick()
+
+        if not t.is_alive():
+            break
 except KeyboardInterrupt:
     print("STATISTACS SKR SKR SKAA")
+finally:
     print("FIREABEND")
-
-
 
