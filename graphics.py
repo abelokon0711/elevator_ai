@@ -35,7 +35,6 @@ class Graphics:
 
     
     def generate_floors(self):
-
         for x in range(self.environment.number_of_floors):
             self.floor_pos.append([self.cv_width / 2, self.padding + self.floor_margin * x, self.cv_width, self.padding + self.floor_margin * x])
 
