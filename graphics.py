@@ -1,9 +1,9 @@
 from tkinter import *
-
  
 class Graphics:
 
     def __init__(self, env):
+        self.master = None
         self.c = None
         self.environment = env
         self.cv_width = 600
@@ -13,17 +13,21 @@ class Graphics:
         self.floor_pos = []
 
     def start(self):
-        master = Tk()
-        master.title("Aufzug AI Simulation")
+        self.master = Tk()
+        self.master.title("Aufzug AI Simulation")
 
-        self.c = Canvas(master, 
+        self.c = Canvas(self.master, 
                    width=self.cv_width,
                    height=self.cv_height)
         self.c.pack()
 
         self.generate_floors()
         self.floor_pos.reverse()
-        mainloop()
+        self.master.protocol("WM_DELETE_WINDOW", self.on_closing)
+        self.master.mainloop()
+
+    def on_closing(self):
+        self.master.destroy()
 
     def tick(self):
         self.c.delete("all")
