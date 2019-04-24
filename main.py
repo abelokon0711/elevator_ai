@@ -11,7 +11,7 @@ t.start()
 
 try:
     while True:
-        time.sleep(1)
+        time.sleep(0.5)
         env.tick()
         gra.tick()
 

@@ -46,7 +46,6 @@ class Environment:
     def tick(self):
         # TODO: Send current state to Agent
         self.generator.tick()
-        self.elevators[0].go_up()
         for elevator in self.elevators:
             elevator.tick()
         for floor in self.floors:
