@@ -1,4 +1,10 @@
-from tkinter import *
+import sys
+if sys.version_info[0] == 3:
+    # for Python3
+    from tkinter import *   ## notice lowercase 't' in tkinter here
+else:
+    # for Python2
+    from Tkinter import *   ## notice capitalized T in Tkinter
  
 class Graphics:
 
