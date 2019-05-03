@@ -12,19 +12,20 @@ if ENABLE_GRAPHICS:
     gra = Graphics(env)
     t = Thread(target=gra.start)
     t.start()
+    sleep(0.5)
 
 try:
     while running:
-        if ENABLE_GRAPHICS: 
+        env.tick()
+
+        if ENABLE_GRAPHICS:
             if not t.is_alive():
                 running = False
-                sys.exit(0)
                 break
-                
-        time.sleep(0.5)
-        env.tick()
-        if ENABLE_GRAPHICS:
             gra.tick()
+
+        sleep(0.5)
+
 except KeyboardInterrupt:
     print("STATISTACS SKR SKR SKAA")
 finally:

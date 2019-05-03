@@ -16,7 +16,7 @@ class Graphics:
 
     def start(self):
         self.master = Tk()
-        self.master.title("Aufzug AI Simulation")
+        self.master.title("AI elevator simulation")
 
         self.c = Canvas(
                 self.master,
@@ -26,6 +26,7 @@ class Graphics:
 
         self.generate_floors()
         self.floor_pos.reverse()
+        self.master.bind('<Escape>', lambda e: self.master.destroy())
         self.master.protocol("WM_DELETE_WINDOW", self.on_closing)
         self.master.mainloop()
 
@@ -33,6 +34,8 @@ class Graphics:
         self.master.destroy()
 
     def tick(self):
+        if not self.running:
+            return
         self.c.delete("all")
         self.draw_environment()
 
