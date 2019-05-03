@@ -60,14 +60,15 @@ class Elevator:
                     self.passenger_in_elevator.remove(p)
 
     def go_up(self):
-        if not self.current_floor < self.environment.number_of_floors:
-            raise ValueError('Floor too high')
-
+        if self.current_floor >= self.environment.number_of_floors:
+            return
+            #raise ValueError('Floor too high')
         self.current_floor += 1
 
     def go_down(self):
         if self.current_floor == 0:
-            raise ValueError('Elevator is on floor 0')
+            return
+            #raise ValueError('Elevator is on floor 0')
 
         self.current_floor -= 1
 
@@ -80,6 +81,9 @@ class Elevator:
             return DirectionState.UP
         else:
             return DirectionState.IDLE
+
+    def getCurrentFloor(self):
+        return self.current_floor
 
     def tick(self):
         pass

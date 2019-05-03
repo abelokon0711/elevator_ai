@@ -27,6 +27,6 @@ try:
         sleep(0.5)
 
 except KeyboardInterrupt:
-    print("STATISTACS SKR SKR SKAA")
+    print("")
 finally:
-    print("FIREABEND")
+    print("Ended")

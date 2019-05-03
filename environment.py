@@ -22,10 +22,17 @@ class Environment:
         self.all_passengers = []
         self.number_of_floors = floors
         self.number_of_elevators = elevators
+        toggle = True
         for i in range(self.number_of_floors):
             self.floors.append(Floor(self, i))
         for i in range(self.number_of_elevators):
-            self.elevators.append(Elevator(i, self))
+            startPos = 5
+            if(toggle):
+                startPos = 0
+                toggle = False
+            self.elevators.append(Elevator(i, self, startPos))
+        self.elevator1_direction = 0
+        self.elevator2_direction = 1
 
     def add_passenger(self, p):
         self.all_passengers.append(p)
@@ -43,6 +50,30 @@ class Environment:
 
     def tick(self):
         # TODO: Send current state to Agent
+        if(self.elevator1_direction == 0):
+            if(self.elevators[0].getCurrentFloor() < 5):
+                self.elevators[0].go_up()
+            else:
+                self.elevators[0].go_down()
+                self.elevator1_direction = 1
+        else:
+            if(self.elevators[0].getCurrentFloor() > 0):
+                self.elevators[0].go_down()
+            else:
+                self.elevators[0].go_up()
+                self.elevator1_direction = 0 
+
+        if(self.elevator2_direction == 0):
+            if(self.elevators[1].getCurrentFloor() < 5):
+                self.elevators[1].go_up()
+            else:
+                self.elevator2_direction = 1
+        else:
+            if(self.elevators[1].getCurrentFloor() > 0):
+                self.elevators[1].go_down()
+            else:
+                self.elevator2_direction = 0 
+
         self.generator.tick()
         for elevator in self.elevators:
             elevator.tick()
