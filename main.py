@@ -1,17 +1,16 @@
 from environment import Environment
 from graphics import Graphics
-import time
-import threading
-import sys
+from time import sleep
+from threading import Thread
 
 ENABLE_GRAPHICS = True
 running = True
 
 env = Environment()
 
-if ENABLE_GRAPHICS :
+if ENABLE_GRAPHICS:
     gra = Graphics(env)
-    t = threading.Thread(target=gra.start)
+    t = Thread(target=gra.start)
     t.start()
 
 try:
@@ -30,4 +29,3 @@ except KeyboardInterrupt:
     print("STATISTACS SKR SKR SKAA")
 finally:
     print("FIREABEND")
-

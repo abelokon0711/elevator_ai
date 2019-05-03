@@ -1,7 +1,5 @@
-import math
 # import numpy as np
 from elevator import Elevator
-from passenger import Passenger
 from floor import Floor
 from generator import Generator
 

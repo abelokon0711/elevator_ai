@@ -15,6 +15,5 @@ class Passenger:
             self.destination_floor = (
                 self.destination_floor + 1) % self.environment.number_of_floors
 
-
     def tick(self):
         pass

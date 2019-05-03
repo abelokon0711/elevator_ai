@@ -1,6 +1,3 @@
-from passenger import Passenger
-
-
 class Floor:
     def __init__(self, environment, floor_id):
         self.environment = environment
@@ -14,14 +11,14 @@ class Floor:
         self.waiting_queue = []
         self.passengers_at_target_list = []
 
-    def add_person_to_waiting_queue(self, Passenger):
-        self.waiting_queue.append(Passenger)
+    def add_person_to_waiting_queue(self, passenger):
+        self.waiting_queue.append(passenger)
 
-    def remove_first_person_from_waiting_queue(self, Passenger):
+    def remove_first_person_from_waiting_queue(self, passenger):
         self.waiting_queue.pop(0)
-    
-    def add_passenger_to_target_list(self, Passenger):
-        self.passengers_at_target_list.append(Passenger)
+
+    def add_passenger_to_target_list(self, passenger):
+        self.passengers_at_target_list.append(passenger)
 
     def tick(self):
         pass
