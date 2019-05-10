@@ -7,7 +7,7 @@ class Graphics:
         self.running = True
         self.environment = env
         self.cv_width = 600
-        self.cv_height = 800
+        self.cv_height = 600
         self.padding = 100
         self.floor_margin = (
                 (self.cv_height-self.padding)

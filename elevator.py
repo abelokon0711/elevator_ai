@@ -51,13 +51,13 @@ class Elevator:
                     ].remove_first_person_from_waiting_queue()
 
     def transfer_passenger_from_elevator_to_current_floor(self):
-        if not self.is_elevator_empty:
-            for p in self.passenger_in_elevator:
-                if p.destination_floor == self.current_floor:
-                    self.environment.floors[
-                            self.current_floor
-                            ].add_passenger_to_target_list(p)
-                    self.passenger_in_elevator.remove(p)
+        # if not self.is_elevator_empty:
+        for p in self.passenger_in_elevator:
+            if p.destination_floor == self.current_floor:
+                self.environment.floors[
+                        self.current_floor
+                        ].add_passenger_to_target_list(p)
+                self.passenger_in_elevator.remove(p)
 
     def go_up(self):
         if not self.current_floor < self.environment.number_of_floors:

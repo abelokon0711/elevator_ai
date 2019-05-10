@@ -70,12 +70,19 @@ episodes = 100
 for _ in range(episodes):
     state = env.reset()
     decoded = env.decode(state)
-    print("---")
-    for element in decoded:
-        print(element)
-    print("---")
-    env.tick()
-    gra.tick()
+
+    print("----- STATE -----")
+    print(*env.decode(state))
+    print("-----------------")
+
+    for floor in env.floors:
+        floor.waiting_queue = []
+    env.elevators[0].passenger_in_elevator = []
+    next(decoded)
+    env.elevators[0].current_floor = next(decoded)
+    p = Passenger(env, next(decoded), next(decoded))
+    env.floors[p.start_floor].add_person_to_waiting_queue(p)
+
 
     epochs, penalties, reward = 0, 0, 0
     
@@ -109,6 +116,7 @@ for _ in range(episodes):
     total_penalties += penalties
     total_epochs += epochs
     
+    sleep(0.5)
     print("done")
 
 print(f"Results after {episodes} episodes:")
