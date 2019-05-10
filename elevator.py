@@ -61,13 +61,15 @@ class Elevator:
 
     def go_up(self):
         if not self.current_floor < self.environment.number_of_floors:
-            raise ValueError('Floor too high')
+            return
+            # raise ValueError('Floor too high')
 
         self.current_floor += 1
 
     def go_down(self):
         if self.current_floor == 0:
-            raise ValueError('Elevator is on floor 0')
+            return
+            # raise ValueError('Elevator is on floor 0')
 
         self.current_floor -= 1
 

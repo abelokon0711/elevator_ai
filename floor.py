@@ -14,7 +14,7 @@ class Floor:
     def add_person_to_waiting_queue(self, passenger):
         self.waiting_queue.append(passenger)
 
-    def remove_first_person_from_waiting_queue(self, passenger):
+    def remove_first_person_from_waiting_queue(self):
         self.waiting_queue.pop(0)
 
     def add_passenger_to_target_list(self, passenger):
