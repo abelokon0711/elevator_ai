@@ -63,25 +63,27 @@ class Environment(discrete.DiscreteEnv):
                                     elif action == 2:  # pickup
                                         if (pass0_idx < 7 and elevator_loc == locs[pass0_idx]):
                                             new_pass0_idx = 7
-                                        if (pass1_idx < 7 and elevator_loc == locs[pass1_idx]):
+                                        elif (pass1_idx < 7 and elevator_loc == locs[pass1_idx]):
                                             new_pass1_idx = 7
                                         else: # passenger not at floor
                                             reward = -10
                                     elif action == 3:  # dropoff
-                                        if (elevator_loc == locs[dest0_idx]) and pass0_idx == 7:
-                                            new_pass0_idx = dest0_idx
-                                            if pass1_idx == dest1_idx:
-                                                done = True
-                                            reward = 20
-                                        elif (elevator_loc in locs) and pass0_idx == 4:
-                                            new_pass0_idx = locs.index(elevator_loc)
-                                        elif (elevator_loc == locs[dest1_idx]) and pass1_idx == 7:
+                                        if (elevator_loc == locs[dest1_idx]) and pass1_idx == 7:
                                             new_pass1_idx = dest1_idx
+                                            #reward = 5
                                             if pass0_idx == dest0_idx:
                                                 done = True
-                                            reward = 20
-                                        elif (elevator_loc in locs) and pass1_idx == 4:
+                                                reward = 40
+                                        elif (elevator_loc in locs) and pass1_idx == 7:
                                             new_pass1_idx = locs.index(elevator_loc)    
+                                        elif (elevator_loc == locs[dest0_idx]) and pass0_idx == 7:
+                                            new_pass0_idx = dest0_idx
+                                            #reward = 5
+                                            if pass1_idx == dest1_idx:
+                                                done = True
+                                                reward = 40
+                                        elif (elevator_loc in locs) and pass0_idx == 7:
+                                            new_pass0_idx = locs.index(elevator_loc)
                                         else: # dropoff at wrong location
                                             reward = -10
                                     new_state = self.encode(

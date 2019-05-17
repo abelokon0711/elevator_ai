@@ -25,7 +25,7 @@ epsilon = 0.1
 all_epochs = []
 all_penalties = []
 
-for i in range(1, 10001):
+for i in range(1, 500001):
     state = env.reset()
 
     epochs, penalties, reward, = 0, 0, 0
@@ -80,6 +80,8 @@ for _ in range(episodes):
     env.elevators[0].passenger_in_elevator = []
     next(decoded)
     env.elevators[0].current_floor = next(decoded)
+    p = Passenger(env, next(decoded), next(decoded))
+    env.floors[p.start_floor].add_person_to_waiting_queue(p)
     p = Passenger(env, next(decoded), next(decoded))
     env.floors[p.start_floor].add_person_to_waiting_queue(p)
 
