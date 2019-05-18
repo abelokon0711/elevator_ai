@@ -31,7 +31,7 @@ class Environment(discrete.DiscreteEnv):
             self.elevators.append(Elevator(i, self))
             
         self.locs = locs = [(0,0), (0,1), (0,2), (0,3), (0,4), (0,5), (0,6)]
-        num_states = 392
+        num_states = 21952
         num_rows = 1
         num_columns = 7
         max_row = num_rows - 1
@@ -42,40 +42,54 @@ class Environment(discrete.DiscreteEnv):
                      for action in range(num_actions)} for state in range(num_states)}
         for row in range(num_rows):
             for col in range(num_columns):
-                for pass_idx in range(len(locs) + 1):  # +1 for being inside elevator
-                    for dest_idx in range(len(locs)):
-                        state = self.encode(row, col, pass_idx, dest_idx)
-                        if pass_idx < 7 and pass_idx != dest_idx:
-                            initial_state_distrib[state] += 1
-                        for action in range(num_actions):
-                            # defaults
-                            new_row, new_col, new_pass_idx = row, col, pass_idx
-                            reward = -1 # default reward when there is no pickup/dropoff
-                            done = False
-                            elevator_loc = (row, col)
+                for pass0_idx in range(len(locs) + 1):  # +1 for being inside elevator
+                    for dest0_idx in range(len(locs)):
+                        for pass1_idx in range(len(locs) + 1):  # +1 for being inside elevator
+                            for dest1_idx in range(len(locs)):
+                                state = self.encode(row, col, pass0_idx, dest0_idx, pass1_idx, dest1_idx)
+                                if (pass0_idx < 7 and pass0_idx != dest0_idx) and (pass1_idx < 7 and pass1_idx != dest1_idx):
+                                    initial_state_distrib[state] += 1
+                                for action in range(num_actions):
+                                    # defaults
+                                    new_row, new_col, new_pass0_idx, new_pass1_idx = row, col, pass0_idx, pass1_idx
+                                    reward = -1 # default reward when there is no pickup/dropoff
+                                    done = False
+                                    elevator_loc = (row, col)
 
-                            if action == 0:
-                                new_col = min(col + 1, max_col)
-                            elif action == 1:
-                                new_col = max(col - 1, 0)
-                            elif action == 2:  # pickup
-                                if (pass_idx < 7 and elevator_loc == locs[pass_idx]):
-                                    new_pass_idx = 7
-                                else: # passenger not at floor
-                                    reward = -10
-                            elif action == 3:  # dropoff
-                                if (elevator_loc == locs[dest_idx]) and pass_idx == 7:
-                                    new_pass_idx = dest_idx
-                                    done = True
-                                    reward = 20
-                                elif (elevator_loc in locs) and pass_idx == 4:
-                                    new_pass_idx = locs.index(elevator_loc)
-                                else: # dropoff at wrong location
-                                    reward = -10
-                            new_state = self.encode(
-                                new_row, new_col, new_pass_idx, dest_idx)
-                            P[state][action].append(
-                                (1.0, new_state, reward, done))
+                                    if action == 0:
+                                        new_col = min(col + 1, max_col)
+                                    elif action == 1:
+                                        new_col = max(col - 1, 0)
+                                    elif action == 2:  # pickup
+                                        if (pass0_idx < 7 and elevator_loc == locs[pass0_idx]):
+                                            new_pass0_idx = 7
+                                        elif (pass1_idx < 7 and elevator_loc == locs[pass1_idx]):
+                                            new_pass1_idx = 7
+                                        else: # passenger not at floor
+                                            reward = -10
+                                    elif action == 3:  # dropoff
+                                        if (elevator_loc == locs[dest1_idx]) and pass1_idx == 7:
+                                            new_pass1_idx = dest1_idx
+                                            #reward = 5
+                                            if pass0_idx == dest0_idx:
+                                                done = True
+                                                reward = 40
+                                        elif (elevator_loc in locs) and pass1_idx == 7:
+                                            new_pass1_idx = locs.index(elevator_loc)    
+                                        elif (elevator_loc == locs[dest0_idx]) and pass0_idx == 7:
+                                            new_pass0_idx = dest0_idx
+                                            #reward = 5
+                                            if pass1_idx == dest1_idx:
+                                                done = True
+                                                reward = 40
+                                        elif (elevator_loc in locs) and pass0_idx == 7:
+                                            new_pass0_idx = locs.index(elevator_loc)
+                                        else: # dropoff at wrong location
+                                            reward = -10
+                                    new_state = self.encode(
+                                        new_row, new_col, new_pass0_idx, dest0_idx, new_pass1_idx, dest1_idx)
+                                    P[state][action].append(
+                                        (1.0, new_state, reward, done))
         initial_state_distrib /= initial_state_distrib.sum()
         discrete.DiscreteEnv.__init__(
             self, num_states, num_actions, P, initial_state_distrib)
@@ -93,19 +107,27 @@ class Environment(discrete.DiscreteEnv):
     def collect_state(self):
         pass
 
-    def encode(self, elevator_row, elevator_col, pass_loc, dest_idx):
-        # (1) 7, 8, 7
+    def encode(self, elevator_row, elevator_col, pass0_loc, dest0_idx, pass1_loc, dest1_idx):
+        # (1) 7, 8, 7, 8, 7
         i = elevator_row
         i *= 7
         i += elevator_col
         i *= 8
-        i += pass_loc
+        i += pass0_loc
         i *= 7
-        i += dest_idx
+        i += dest0_idx
+        i *= 8
+        i += pass1_loc
+        i *= 7
+        i += dest1_idx
         return i
 
     def decode(self, i):
         out = []
+        out.append(i % 7)
+        i = i // 7
+        out.append(i % 8)
+        i = i // 8
         out.append(i % 7)
         i = i // 7
         out.append(i % 8)
