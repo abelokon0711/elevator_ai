@@ -3,6 +3,9 @@ import gym
 from gym import spaces, logger
 from gym.utils import seeding
 import numpy as np
+import pyglet
+from pyglet import gl
+from pyglet.gl import *
 
 
 class ElevatorEnv(gym.Env):
@@ -98,9 +101,46 @@ class ElevatorEnv(gym.Env):
         screen_width = 600
         screen_height = 400
 
+        floor_padding = (screen_height - 100) / self.floor_num
+
         if self.viewer is None:
             from gym.envs.classic_control import rendering
             self.viewer = rendering.Viewer(screen_width, screen_height)
+            self.score_label = pyglet.text.Label('0000', font_size=72, font_name="Times New Roman",
+                                                 x=screen_width, y=screen_height, anchor_x='left', anchor_y='center',
+                                                 color=(0, 0, 0, 255))
+
+            # render floors
+            for i in range(self.floor_num):
+                track = rendering.Line(
+                    (screen_width/2, 50 + floor_padding * i), (screen_width, 50 + floor_padding * i))
+                track.set_color(0, 0, 0)
+                self.viewer.add_geom(track)
+
+            track = rendering.Line(
+                (screen_width/2, 50 + floor_padding * self.floor_num), (screen_width, 50 + floor_padding * self.floor_num))
+            track.set_color(0, 0, 0)
+            self.viewer.add_geom(track)
+
+            boxwidth = floor_padding/1.5
+            boxheight = floor_padding
+            l, r, t, b = -boxwidth/2, boxwidth/2, boxheight-boxwidth/2, -boxwidth/2
+            box = rendering.FilledPolygon([(l, b), (l, t), (r, t), (r, b)])
+            self.boxtrans = rendering.Transform(
+                (screen_width/2 + boxwidth, (self.state[0] * floor_padding - 30) + 40))
+            box.add_attr(self.boxtrans)
+            box.set_color(.4, .4, .4)
+
+            self.transform = rendering.Transform()
+
+            self.viewer.add_geom(box)
+
+            win = self.viewer.window
+            win.switch_to()
+            win.dispatch_events()
+            win.clear()
+
+            self.score_label.draw()
 
         if self.state is None:
             return None
