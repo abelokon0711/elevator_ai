@@ -3,9 +3,9 @@ import gym
 from gym import spaces, logger
 from gym.utils import seeding
 import numpy as np
+
 import pyglet
 from pyglet import gl
-from pyglet.gl import *
 
 
 class ElevatorEnv(gym.Env):
@@ -98,54 +98,89 @@ class ElevatorEnv(gym.Env):
         return np.array(self.state)
 
     def render(self, mode='human'):
-        screen_width = 600
-        screen_height = 400
-
-        floor_padding = (screen_height - 100) / self.floor_num
+        self.screen_width = 600
+        self.screen_height = 400
 
         if self.viewer is None:
             from gym.envs.classic_control import rendering
-            self.viewer = rendering.Viewer(screen_width, screen_height)
-            self.score_label = pyglet.text.Label('0000', font_size=72, font_name="Times New Roman",
-                                                 x=screen_width, y=screen_height, anchor_x='left', anchor_y='center',
-                                                 color=(0, 0, 0, 255))
+            self.viewer = rendering.Viewer(
+                self.screen_width, self.screen_height)
+            self.transform = rendering.Transform()
 
-            # render floors
-            for i in range(self.floor_num):
-                track = rendering.Line(
-                    (screen_width/2, 50 + floor_padding * i), (screen_width, 50 + floor_padding * i))
-                track.set_color(0, 0, 0)
-                self.viewer.add_geom(track)
-
-            track = rendering.Line(
-                (screen_width/2, 50 + floor_padding * self.floor_num), (screen_width, 50 + floor_padding * self.floor_num))
-            track.set_color(0, 0, 0)
-            self.viewer.add_geom(track)
-
+            floor_padding = (self.screen_height - 100) / self.floor_num
             boxwidth = floor_padding/1.5
             boxheight = floor_padding
             l, r, t, b = -boxwidth/2, boxwidth/2, boxheight-boxwidth/2, -boxwidth/2
             box = rendering.FilledPolygon([(l, b), (l, t), (r, t), (r, b)])
             self.boxtrans = rendering.Transform(
-                (screen_width/2 + boxwidth, (self.state[0] * floor_padding - 30) + 40))
+                (self.screen_width/2 + boxwidth, (self.state[0] * floor_padding - 30) + 40))
             box.add_attr(self.boxtrans)
             box.set_color(.4, .4, .4)
 
-            self.transform = rendering.Transform()
+            for i in range(self.floor_num):
+                start = self.floor_num * (i+1) + self.elevator_limit
+                stop = start + self.floor_limit
+
+                for j in range(int(start), int(stop)):
+                    if j != 0:
+                        print('ok')
 
             self.viewer.add_geom(box)
 
             win = self.viewer.window
             win.switch_to()
             win.dispatch_events()
+
             win.clear()
+            t = self.transform
+            self.score_label = pyglet.text.Label('HELLO WORLD', font_size=36,
+                                                 x=20, y=self.screen_height*2.5/40.00, anchor_x='left', anchor_y='center', color=(0, 0, 0, 255))
+            pixel_scale = 1
+            if hasattr(win.context, '_nscontext'):
+                pixel_scale = win.context._nscontext.view(
+                ).backingScaleFactor()  # pylint: disable=protected-access
+            VP_W = int(pixel_scale * self.screen_width)
+            VP_H = int(pixel_scale * self.screen_height)
 
-            self.score_label.draw()
+            gl.glViewport(0, 0, VP_W, VP_H)
+            t.enable()
+            self.render_floors()
+            t.disable()
 
-        if self.state is None:
-            return None
+            self.render_indicators(self.screen_width, self.screen_height)
 
-        return self.viewer.render(return_rgb_array=mode == 'rgb_array')
+            win.flip()
+            return self.viewer.isopen
+
+    def render_floors(self):
+        PLAYFIELD = 2000
+        gl.glBegin(gl.GL_QUADS)
+        gl.glColor4f(1, 1, 1, 1.0)
+        gl.glVertex3f(-PLAYFIELD, +PLAYFIELD, 0)
+        gl.glVertex3f(+PLAYFIELD, +PLAYFIELD, 0)
+        gl.glVertex3f(+PLAYFIELD, -PLAYFIELD, 0)
+        gl.glVertex3f(-PLAYFIELD, -PLAYFIELD, 0)
+
+        floor_padding = (self.screen_height - 100) / self.floor_num
+        for floor in range(self.floor_num+1):
+            gl.glColor4f(0, 0, 0, 1)
+            gl.glVertex3f(self.screen_width, 50 + floor_padding * floor, 0)
+            gl.glVertex3f(self.screen_width, 50 + floor_padding * floor + 1, 0)
+            gl.glVertex3f(self.screen_width/2, 50 +
+                          floor_padding * floor + 1, 0)
+            gl.glVertex3f(self.screen_width/2, 50 + floor_padding * floor, 0)
+        gl.glEnd()
+
+    def render_indicators(self, W, H):
+        gl.glBegin(gl.GL_QUADS)
+        gl.glColor4f(1, 1, 1, 1)
+        gl.glVertex3f(W/2, 0, 0)
+        gl.glVertex3f(W/2, H, 0)
+        gl.glVertex3f(0, H, 0)
+        gl.glVertex3f(0, 0, 0)
+        gl.glEnd()
+        self.score_label.text = "%04i" % 0
+        self.score_label.draw()
 
     def close(self):
         if self.viewer:
