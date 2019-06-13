@@ -222,7 +222,7 @@ class ElevatorEnv(gym.Env):
             start = floor * self.floor_limit + self.elevator_limit + 1
             stop = start + self.floor_limit
             waiting_passangers_floor = 0
-            for i in range(start, stop):
+            for i in range(int(start), int(stop)):
                 if self.state[i] > 0:
                     waiting_passangers_floor += 1
 
