@@ -35,7 +35,7 @@ class ElevatorEnv(gym.Env):
         assert self.action_space.contains(
             action), "%r (%s) invalid" % (action, type(action))
         state = self.state
-        current_floor = state[1]
+        current_floor = state[0]
 
         reward = 0
         if action == 0:
@@ -44,6 +44,7 @@ class ElevatorEnv(gym.Env):
             current_floor += 1
         elif action == 2:
             passengers_in_elevator_num = 0
+            passengers_entered = False
             # indices to iterate over for passengers in the elevator
             # state[i] equals passenger destination
             for i in range(1, self.elevator_limit + 1):
@@ -58,8 +59,8 @@ class ElevatorEnv(gym.Env):
 
             # indices to iterate over for passengers waiting on the current floor
             # state[i] equals passenger destination
-            start = self.floor_num * current_floor + self.elevator_limit
-            stop = start + self.floor_limit
+            start = current_floor * self.floor_limit + self.elevator_limit + 1
+            stop = start + self.floor_limit + 1
             for i in range(int(start), int(stop)):
                 if state[i] == 0:
                     continue
@@ -73,6 +74,11 @@ class ElevatorEnv(gym.Env):
                         if state[k] == 0:
                             # move passenger into elevator
                             state[k] = state[j]
+                            state[j] = 0
+                            passengers_entered = True
+
+            if passengers_entered == False:
+                reward = -10
 
         if reward == 0:
             reward = -1
@@ -89,9 +95,21 @@ class ElevatorEnv(gym.Env):
         self.state = np.zeros(1 + self.elevator_limit +
                               self.floor_num * self.floor_limit)
 
+        # initial elevator position
+        self.state[0] = 1
+
         # here index is 51
-        self.state[1 + self.elevator_limit +
-                   (self.floor_num - 1) * self.floor_limit] = 1
+        # self.state[1 + self.elevator_limit +
+        #           (self.floor_num - 1) * self.floor_limit] = 1
+
+        random_floor = self.np_random.uniform(1, self.floor_num + 1)
+        random_destination = self.np_random.uniform(1, self.floor_num + 1)
+
+        while random_floor == random_destination:
+            random_destination = self.np_random.uniform(1, self.floor_num + 1)
+
+        self.state[(1 + self.elevator_limit + (random_floor - 1)
+                    * self.floor_limit)] = random_destination
 
         self.waiting_passangers = 1
         self.steps_beyond_done = None
@@ -107,13 +125,13 @@ class ElevatorEnv(gym.Env):
                 self.screen_width, self.screen_height)
             self.transform = rendering.Transform()
 
-            floor_padding = (self.screen_height - 100) / self.floor_num
-            boxwidth = floor_padding/1.5
-            boxheight = floor_padding
+            self.floor_padding = (self.screen_height - 100) / self.floor_num
+            boxwidth = self.floor_padding/1.5
+            boxheight = self.floor_padding
             l, r, t, b = -boxwidth/2, boxwidth/2, boxheight-boxwidth/2, -boxwidth/2
             box = rendering.FilledPolygon([(l, b), (l, t), (r, t), (r, b)])
             self.boxtrans = rendering.Transform(
-                (self.screen_width/2 + boxwidth, (self.state[0] * floor_padding - 30) + 40))
+                (self.screen_width/2 + boxwidth, (self.state[0] * self.floor_padding - 30) + 40))
             box.add_attr(self.boxtrans)
             box.set_color(.4, .4, .4)
 
@@ -143,11 +161,12 @@ class ElevatorEnv(gym.Env):
             VP_H = int(pixel_scale * self.screen_height)
 
             gl.glViewport(0, 0, VP_W, VP_H)
+
             t.enable()
             self.render_floors()
-            t.disable()
-
             self.render_indicators(self.screen_width, self.screen_height)
+            self.render_elevators()
+            t.disable()
 
             win.flip()
             return self.viewer.isopen
@@ -161,14 +180,17 @@ class ElevatorEnv(gym.Env):
         gl.glVertex3f(+PLAYFIELD, -PLAYFIELD, 0)
         gl.glVertex3f(-PLAYFIELD, -PLAYFIELD, 0)
 
-        floor_padding = (self.screen_height - 100) / self.floor_num
-        for floor in range(self.floor_num+1):
+        # increase range by one to add line on the top
+        for floor in range(self.floor_num + 1):
             gl.glColor4f(0, 0, 0, 1)
-            gl.glVertex3f(self.screen_width, 50 + floor_padding * floor, 0)
-            gl.glVertex3f(self.screen_width, 50 + floor_padding * floor + 1, 0)
+            gl.glVertex3f(self.screen_width, 50 +
+                          self.floor_padding * floor, 0)
+            gl.glVertex3f(self.screen_width, 50 +
+                          self.floor_padding * floor + 1, 0)
             gl.glVertex3f(self.screen_width/2, 50 +
-                          floor_padding * floor + 1, 0)
-            gl.glVertex3f(self.screen_width/2, 50 + floor_padding * floor, 0)
+                          self.floor_padding * floor + 1, 0)
+            gl.glVertex3f(self.screen_width/2, 50 +
+                          self.floor_padding * floor, 0)
         gl.glEnd()
 
     def render_indicators(self, W, H):
@@ -179,8 +201,40 @@ class ElevatorEnv(gym.Env):
         gl.glVertex3f(0, H, 0)
         gl.glVertex3f(0, 0, 0)
         gl.glEnd()
-        self.score_label.text = "%04i" % 0
-        self.score_label.draw()
+
+        for floor in range(self.floor_num):
+            position_x = 20
+            position_y = 50 + (self.floor_padding) * \
+                floor + (self.floor_padding/2)
+            # 0 - aufzug pos, 1-10 passanger in aufzug, 11-21 warteschlange floor 1, 22-32 warteschlange floor 2
+            # TODO: alexkek
+
+            start = floor * self.floor_limit + self.elevator_limit + 1
+            stop = start + self.floor_limit + 1
+            waiting_passangers = 0
+            for i in range(start, stop):
+                if self.state[i] > 0:
+                    waiting_passangers += 1
+
+            score_label = pyglet.text.Label('Warteschlange: ' + str(waiting_passangers), font_size=14,
+                                            x=position_x, y=position_y, anchor_x='left', anchor_y='center', color=(0, 0, 0, 255))
+            score_label.draw()
+
+    def render_elevators(self):
+        elevator_width = 50
+        gl.glBegin(gl.GL_QUADS)
+        for i in range(self.elevator_num):
+            current_floor = self.state[i] - 1
+            gl.glColor4f(0.3, 0.3, 0.3, 1)
+            gl.glVertex3f(self.screen_width / 2 + elevator_width,
+                          50 + self.floor_padding * current_floor, 0)
+            gl.glVertex3f(self.screen_width / 2 + elevator_width, 50 +
+                          self.floor_padding * current_floor + self.floor_padding, 0)
+            gl.glVertex3f(self.screen_width / 2, 50 +
+                          self.floor_padding * current_floor + self.floor_padding, 0)
+            gl.glVertex3f(self.screen_width/2, 50 +
+                          self.floor_padding * current_floor, 0)
+        gl.glEnd()
 
     def close(self):
         if self.viewer:

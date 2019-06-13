@@ -9,7 +9,7 @@ register(
 )
 
 env = gym.make('Elevator-v0')
-for i_episode in range(20):
+for i_episode in range(200):
     observation = env.reset()
     for t in range(1000):
         env.render()
