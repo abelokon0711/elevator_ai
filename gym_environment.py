@@ -119,84 +119,90 @@ class ElevatorEnv(gym.Env):
         # here index is 51
         # self.state[1 + self.elevator_limit +
         #           (self.floor_num - 1) * self.floor_limit] = 1
+        
+        for iwas in range(2):
+            random_floor = int(self.np_random.uniform(1, self.floor_num + 1))
+            random_destination = int(self.np_random.uniform(1, self.floor_num + 1))
 
-        random_floor = int(self.np_random.uniform(1, self.floor_num + 1))
-        random_destination = int(self.np_random.uniform(1, self.floor_num + 1))
+            while random_floor == random_destination:
+                random_destination = int(
+                    self.np_random.uniform(1, self.floor_num + 1))
 
-        while random_floor == random_destination:
-            random_destination = int(
-                self.np_random.uniform(1, self.floor_num + 1))
+            self.state[int(1 + self.elevator_limit + (random_floor - 1) *
+                        self.floor_limit)] = random_destination
+            
+            self.waiting_passangers += 1
 
-        self.state[int(1 + self.elevator_limit + (random_floor - 1) *
-                       self.floor_limit)] = random_destination
 
-        self.waiting_passangers = 1
+
+        
         self.steps_beyond_done = None
         return np.array(self.state)
 
     def render(self, mode='human'):
+        from gym.envs.classic_control import rendering
         self.screen_width = 600
         self.screen_height = 400
-
+        
         if self.viewer is None:
-            from gym.envs.classic_control import rendering
+            
             self.viewer = rendering.Viewer(self.screen_width,
                                            self.screen_height)
-            self.transform = rendering.Transform()
+        self.transform = rendering.Transform()
 
-            self.floor_padding = (self.screen_height - 100) / self.floor_num
-            boxwidth = self.floor_padding / 1.5
-            boxheight = self.floor_padding
-            l, r, t, b = -boxwidth / 2, boxwidth / 2, boxheight - boxwidth / 2, -boxwidth / 2
-            box = rendering.FilledPolygon([(l, b), (l, t), (r, t), (r, b)])
-            self.boxtrans = rendering.Transform(
-                (self.screen_width / 2 + boxwidth,
-                 (self.state[0] * self.floor_padding - 30) + 40))
-            box.add_attr(self.boxtrans)
-            box.set_color(.4, .4, .4)
+        self.floor_padding = (self.screen_height - 100) / self.floor_num
+        boxwidth = self.floor_padding / 1.5
+        boxheight = self.floor_padding
+        l, r, t, b = -boxwidth / 2, boxwidth / 2, boxheight - boxwidth / 2, -boxwidth / 2
+        box = rendering.FilledPolygon([(l, b), (l, t), (r, t), (r, b)])
+        self.boxtrans = rendering.Transform(
+            (self.screen_width / 2 + boxwidth,
+                (self.state[0] * self.floor_padding - 30) + 40))
+        box.add_attr(self.boxtrans)
+        box.set_color(.4, .4, .4)
 
-            for i in range(self.floor_num):
-                start = self.floor_num * (i + 1) + self.elevator_limit
-                stop = start + self.floor_limit
+        for i in range(self.floor_num):
+            start = self.floor_num * (i + 1) + self.elevator_limit
+            stop = start + self.floor_limit
 
-                for j in range(int(start), int(stop)):
-                    if j != 0:
-                        pass
-                        #print('ok')
+            for j in range(int(start), int(stop)):
+                if j != 0:
+                    pass
+                    #print('ok')
 
-            self.viewer.add_geom(box)
+        self.viewer.add_geom(box)
 
-            win = self.viewer.window
-            win.switch_to()
-            win.dispatch_events()
+        win = self.viewer.window
+        win.switch_to()
+        win.dispatch_events()
 
-            win.clear()
-            t = self.transform
-            self.score_label = pyglet.text.Label('HELLO WORLD',
-                                                 font_size=36,
-                                                 x=20,
-                                                 y=self.screen_height * 2.5 /
-                                                 40.00,
-                                                 anchor_x='left',
-                                                 anchor_y='center',
-                                                 color=(0, 0, 0, 255))
-            pixel_scale = 1
-            if hasattr(win.context, '_nscontext'):
-                pixel_scale = win.context._nscontext.view().backingScaleFactor(
-                )  # pylint: disable=protected-access
-            VP_W = int(pixel_scale * self.screen_width)
-            VP_H = int(pixel_scale * self.screen_height)
+        win.clear()
+        t = self.transform
+        self.score_label = pyglet.text.Label('HELLO WORLD',
+                                                font_size=36,
+                                                x=20,
+                                                y=self.screen_height * 2.5 /
+                                                40.00,
+                                                anchor_x='left',
+                                                anchor_y='center',
+                                                color=(0, 0, 0, 255))
+        pixel_scale = 1
+        if hasattr(win.context, '_nscontext'):
+            pixel_scale = win.context._nscontext.view().backingScaleFactor(
+            )  # pylint: disable=protected-access
+        VP_W = int(pixel_scale * self.screen_width)
+        VP_H = int(pixel_scale * self.screen_height)
 
-            gl.glViewport(0, 0, VP_W, VP_H)
+        gl.glViewport(0, 0, VP_W, VP_H)
 
-            t.enable()
-            self.render_floors()
-            self.render_indicators(self.screen_width, self.screen_height)
-            self.render_elevators()
-            t.disable()
+        t.enable()
+        self.render_floors()
+        self.render_indicators(self.screen_width, self.screen_height)
+        self.render_elevators()
+        t.disable()
 
-            win.flip()
-            return self.viewer.isopen
+        win.flip()
+        return self.viewer.isopen
 
     def render_floors(self):
         PLAYFIELD = 2000

@@ -28,7 +28,7 @@ for state in loaded_episode:
     env.state = state
     print(state)
     env.render()
-    sleep(args.speed)
+    sleep(1/args.speed)
 env.close()
 
 
