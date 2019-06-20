@@ -3,7 +3,6 @@ import gym
 from gym import spaces, logger
 from gym.utils import seeding
 import numpy as np
-
 import pyglet
 from pyglet import gl
 
@@ -162,7 +161,8 @@ class ElevatorEnv(gym.Env):
 
                 for j in range(int(start), int(stop)):
                     if j != 0:
-                        print('ok')
+                        pass
+                        #print('ok')
 
             self.viewer.add_geom(box)
 
