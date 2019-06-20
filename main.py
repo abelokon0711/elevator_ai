@@ -9,13 +9,14 @@ TRAIN_AGENT = True
 ENABLE_GRAPHICS = True
 EPISODES = 500
 STEPS_PER_EPISODE = 1000
+DIMENSIONS = 61
 
 register(
     id='Elevator-v0',
     entry_point='gym_environment:ElevatorEnv',
 )
 
-observationz = numpy.zeros((EPISODES, STEPS_PER_EPISODE, 61))
+observationz = numpy.zeros((EPISODES, STEPS_PER_EPISODE, DIMENSIONS))
 
 if TRAIN_AGENT:
     """Training the agent"""
@@ -35,10 +36,11 @@ if TRAIN_AGENT:
 
     print("Training finished.\n")
 
-    # Write observationz to file
+    print("Writing states to files")
     for i in range(EPISODES):
         numpy.savetxt('results/observations_episode_' + str(i) + '.txt',
                     observationz[i], delimiter=',')
+    print("Saved data")
 
 if ENABLE_GRAPHICS:
     """Visualize episode zero"""

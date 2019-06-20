@@ -146,7 +146,6 @@ class ElevatorEnv(gym.Env):
         self.screen_height = 400
 
         if self.viewer is None:
-
             self.viewer = rendering.Viewer(self.screen_width,
                                            self.screen_height)
         self.transform = rendering.Transform()
@@ -171,17 +170,8 @@ class ElevatorEnv(gym.Env):
         win = self.viewer.window
         win.switch_to()
         win.dispatch_events()
-
         win.clear()
-        t = self.transform
-        self.score_label = pyglet.text.Label('HELLO WORLD',
-                                                font_size=36,
-                                                x=20,
-                                                y=self.screen_height * 2.5 /
-                                                40.00,
-                                                anchor_x='left',
-                                                anchor_y='center',
-                                                color=(0, 0, 0, 255))
+
         pixel_scale = 1
         if hasattr(win.context, '_nscontext'):
             pixel_scale = win.context._nscontext.view().backingScaleFactor(
@@ -191,6 +181,7 @@ class ElevatorEnv(gym.Env):
 
         gl.glViewport(0, 0, VP_W, VP_H)
 
+        t = self.transform
         t.enable()
         self.render_floors()
         self.render_indicators(self.screen_width, self.screen_height)
