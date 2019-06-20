@@ -21,6 +21,12 @@ class ElevatorEnv(gym.Env):
             self.elevator_num * self.elevator_limit *
             self.floor_num**self.floor_limit)
 
+        self.observation_space = spaces.Discrete(
+            self.elevator_num
+            + (self.elevator_num * self.elevator_limit)
+            + (self.floor_limit*self.floor_num)
+        )
+
         self.seed(10)
         self.viewer = None
         self.state = None
@@ -36,16 +42,23 @@ class ElevatorEnv(gym.Env):
         assert self.action_space.contains(
             action), "%r (%s) invalid" % (action, type(action))
         state = self.state
-        current_floor = state[0]
 
         reward = 0
         if action == 0:
-            current_floor -= 1
+            if state[0] == 1:
+                reward -= 100
+            else:
+                state[0] -= 1
         elif action == 1:
-            current_floor += 1
+            if state[0] == self.floor_num:
+                reward -= 100
+            else:
+                state[0] += 1
         elif action == 2:
+            current_floor = state[0]
             passengers_in_elevator_num = 0
             passengers_entered = False
+            passengers_left = False
             # indices to iterate over for passengers in the elevator
             # state[i] equals passenger destination
             for i in range(1, self.elevator_limit + 1):
@@ -55,14 +68,17 @@ class ElevatorEnv(gym.Env):
                     state[i] = 0
                     reward += 10
                     self.waiting_passangers -= 1
+                    passengers_left = True
                 else:
                     passengers_in_elevator_num += 1
+            # passengers_in_elevator_num = amount of passengers that did not leave elevator
 
             # indices to iterate over for passengers waiting on the current floor
             # state[i] equals passenger destination
-            start = current_floor * self.floor_limit + self.elevator_limit + 1
+            start = (current_floor * self.floor_limit) + 1
             stop = start + self.floor_limit
             for i in range(int(start), int(stop)):
+                print(i)
                 if state[i] == 0:
                     continue
 
@@ -72,16 +88,15 @@ class ElevatorEnv(gym.Env):
 
                 for j in range(
                         int(start),
-                        int(start + (self.elevator_limit -
-                                     passengers_in_elevator_num))):
-                    for k in range(1, self.elevator_limit + 1):
+                        int(stop)):
+                    for k in range(1, self.elevator_limit):
                         if state[k] == 0:
                             # move passenger into elevator
                             state[k] = state[j]
                             state[j] = 0
                             passengers_entered = True
 
-            if passengers_entered == False:
+            if passengers_entered == False and passengers_left == False:
                 reward = -10
 
         if reward == 0:
@@ -91,8 +106,8 @@ class ElevatorEnv(gym.Env):
         if self.waiting_passangers == 0:
             done = True
             reward += 40
-
-        return np.array(self.state), reward, done, {}
+        self.state = state
+        return np.array(state), reward, done, {}
 
     def reset(self):
         # set here waiting_passangers
