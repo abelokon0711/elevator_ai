@@ -38,6 +38,7 @@ class ElevatorEnv(gym.Env):
         return [seed]
 
     def step(self, action):
+        done = False
         assert self.action_space.contains(
             action), "%r (%s) invalid" % (action, type(action))
         state = self.state
@@ -45,12 +46,14 @@ class ElevatorEnv(gym.Env):
         reward = 0
         if action == 0:
             if state[0] == 1:
-                reward -= 100
+                reward -= 1000
+                done = True
             else:
                 state[0] -= 1
         elif action == 1:
             if state[0] == self.floor_num:
-                reward -= 100
+                reward -= 1000
+                done = True
             else:
                 state[0] += 1
         elif action == 2:
@@ -77,7 +80,6 @@ class ElevatorEnv(gym.Env):
             start = (current_floor * self.floor_limit) + 1
             stop = start + self.floor_limit
             for i in range(int(start), int(stop)):
-                print(i)
                 if state[i] == 0:
                     continue
 
@@ -101,7 +103,6 @@ class ElevatorEnv(gym.Env):
         if reward == 0:
             reward = -1
 
-        done = False
         if self.waiting_passangers == 0:
             done = True
             reward += 40
@@ -119,7 +120,7 @@ class ElevatorEnv(gym.Env):
         # here index is 51
         # self.state[1 + self.elevator_limit +
         #           (self.floor_num - 1) * self.floor_limit] = 1
-        
+
         for iwas in range(2):
             random_floor = int(self.np_random.uniform(1, self.floor_num + 1))
             random_destination = int(self.np_random.uniform(1, self.floor_num + 1))
@@ -130,12 +131,12 @@ class ElevatorEnv(gym.Env):
 
             self.state[int(1 + self.elevator_limit + (random_floor - 1) *
                         self.floor_limit)] = random_destination
-            
+
             self.waiting_passangers += 1
 
 
 
-        
+
         self.steps_beyond_done = None
         return np.array(self.state)
 
@@ -143,9 +144,9 @@ class ElevatorEnv(gym.Env):
         from gym.envs.classic_control import rendering
         self.screen_width = 600
         self.screen_height = 400
-        
+
         if self.viewer is None:
-            
+
             self.viewer = rendering.Viewer(self.screen_width,
                                            self.screen_height)
         self.transform = rendering.Transform()
@@ -164,11 +165,6 @@ class ElevatorEnv(gym.Env):
         for i in range(self.floor_num):
             start = self.floor_num * (i + 1) + self.elevator_limit
             stop = start + self.floor_limit
-
-            for j in range(int(start), int(stop)):
-                if j != 0:
-                    pass
-                    #print('ok')
 
         self.viewer.add_geom(box)
 
