@@ -11,6 +11,8 @@ def main(parse_args=True, episode_to_load=1, playback_speed_factor=10, end_episo
     if parse_args:
         parser = argparse.ArgumentParser(
             description='Replay training process.')
+        parser.add_argument('folder', metavar='N', type=str,
+                        help='Folder to check for episodes')
         parser.add_argument('episode', metavar='N', type=int,
                             help='episode to be replayed')
         parser.add_argument('--speed', type=float, default=1,
@@ -20,15 +22,13 @@ def main(parse_args=True, episode_to_load=1, playback_speed_factor=10, end_episo
         args = parser.parse_args()
         episode_to_load = args.episode
         playback_speed_factor = args.speed
+        execution_folder = args.folder
         if args.end_episode is not None:
             end_episode = args.end_episode
 
     for i in range(episode_to_load, end_episode + 1):
-        episodes.append(
-            loadtxt(
-                "./results/observations_episode_"
-                + str(i)
-                + ".txt", delimiter=','))
+        path = "results/"+ execution_folder+"/observations_episode_"+ str(i) + ".txt"
+        episodes.append(loadtxt(path, delimiter=','))
 
     env = gym.make('Elevator-v0')
     env.reset()
@@ -38,7 +38,7 @@ def main(parse_args=True, episode_to_load=1, playback_speed_factor=10, end_episo
             env.state = state
             if not state[1:].any():
                 continue
-            print(state)
+            #print(state)
             env.render()
             sleep(1/playback_speed_factor)
     env.close()

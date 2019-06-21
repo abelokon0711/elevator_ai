@@ -24,6 +24,8 @@ def build_model(input_size, output_size):
     #                                          beta_2=0.999, epsilon=None, decay=0.0, amsgrad=False))
     model.add(Dense(64, input_dim=input_size, activation='relu',
                     kernel_initializer='random_uniform', bias_initializer='zeros'))
+    model.add(Dense(64, activation='relu',
+                    kernel_initializer='random_uniform', bias_initializer='zeros'))
 
     model.add(Dense(output_size, activation='sigmoid',
                     kernel_initializer='random_uniform', bias_initializer='zeros'))
@@ -35,7 +37,7 @@ def build_model(input_size, output_size):
 # https://machinelearningmastery.com/save-load-keras-deep-learning-models/
 
 # id damit wird episoden und model unterscheiden können nach ausführung des skripts
-execution_id = time.time()
+execution_id = hash(time.time())
 
 
 def exit_handler():
@@ -62,7 +64,7 @@ register(
     entry_point='gym_environment:ElevatorEnv',
 )
 
-episoden = 15000
+episoden = 1500
 schritte = 200
 zustandvektor_laenge = 61
 aktionvektor_laenge = 3
@@ -131,7 +133,7 @@ for i_episode in range(episoden):
     for i in range(len(memories)):
         X.append(memories[i][0])
         y.append(memories[i][1])
-    if sum_reward > -1000000:
+    if sum_reward >= -1000:
         print("Sum of Rewards at Episode ", i_episode, ': ', sum_reward)
     # Train model
     neural_network.fit([X], [y], verbose=0)  # ,epochs=10, batch_size=1)
