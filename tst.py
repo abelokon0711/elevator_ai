@@ -1,7 +1,7 @@
 import gym
 import numpy
 import random
-
+import os
 import atexit
 import time
 
@@ -39,11 +39,20 @@ execution_id = time.time()
 
 
 def exit_handler():
+    # save model and weights
     print('Saving model...')
     model_json = neural_network.to_json()
-    with open("model"+ execution_id +".json", "w") as json_file:
+    os.mkdir("models/"+str(execution_id))
+    with open("models/"+ str(execution_id) +"/model.json", "w") as json_file:
         json_file.write(model_json)
-    neural_network.save_weights("model.h5")
+    neural_network.save_weights("models/"+ str(execution_id) +"/model_weights.h5")
+
+    # Write observationz to file
+    print("Saving episodes")
+    os.mkdir("results/"+str(execution_id))
+    for i in range(aufzeichnungen):
+        numpy.savetxt('results/'+str(execution_id)+'/observations_episode_' + str(i) +
+                    '.txt', observationz[i], delimiter=',')
 
 atexit.register(exit_handler)
 
@@ -53,17 +62,21 @@ register(
     entry_point='gym_environment:ElevatorEnv',
 )
 
-episoden = 1000
-schritte = 1000
+episoden = 15000
+schritte = 200
 zustandvektor_laenge = 61
 aktionvektor_laenge = 3
 
-observationz = numpy.zeros((episoden, schritte, zustandvektor_laenge))
 
 # Training the model
 env = gym.make('Elevator-v0')
 
 neural_network = build_model(zustandvektor_laenge, aktionvektor_laenge)
+
+aufzeichnungen = 100
+start_recording_at = episoden - aufzeichnungen
+observationz = numpy.zeros((aufzeichnungen, schritte, zustandvektor_laenge))
+
 
 for i_episode in range(episoden):
     observation = env.reset()
@@ -73,7 +86,8 @@ for i_episode in range(episoden):
 
     for t in range(schritte):
         # env.render()
-        observationz[i_episode][t] = numpy.copy(observation)
+        if i_episode >= start_recording_at:
+            observationz[i_episode - start_recording_at][t] = numpy.copy(observation)
 
         # print(action)
 
@@ -118,12 +132,8 @@ for i_episode in range(episoden):
         X.append(memories[i][0])
         y.append(memories[i][1])
     if sum_reward > -1000000:
-        print("Sum of Rewards at Episde ", i_episode, ': ', sum_reward)
+        print("Sum of Rewards at Episode ", i_episode, ': ', sum_reward)
     # Train model
     neural_network.fit([X], [y], verbose=0)  # ,epochs=10, batch_size=1)
 env.close()
-# Write observationz to file
-for i in range(episoden - 50, episoden):
-    numpy.savetxt('results/observations'+execution_id+'_episode_' + str(i) +
-                  '.txt', observationz[i], delimiter=',')
 
