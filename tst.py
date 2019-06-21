@@ -2,6 +2,9 @@ import gym
 import numpy
 import random
 
+import atexit
+import time
+
 from gym.envs.registration import registry, register, make, spec
 
 from keras.models import Sequential
@@ -29,14 +32,29 @@ def build_model(input_size, output_size):
                                              beta_2=0.999, epsilon=None, decay=0.0, amsgrad=False))
     return model
 
+# https://machinelearningmastery.com/save-load-keras-deep-learning-models/
+
+# id damit wird episoden und model unterscheiden können nach ausführung des skripts
+execution_id = time.time()
+
+
+def exit_handler():
+    print('Saving model...')
+    model_json = neural_network.to_json()
+    with open("model"+ execution_id +".json", "w") as json_file:
+        json_file.write(model_json)
+    neural_network.save_weights("model.h5")
+
+atexit.register(exit_handler)
+
 
 register(
     id='Elevator-v0',
     entry_point='gym_environment:ElevatorEnv',
 )
 
-episoden = 10000
-schritte = 10000
+episoden = 1000
+schritte = 1000
 zustandvektor_laenge = 61
 aktionvektor_laenge = 3
 
@@ -106,5 +124,6 @@ for i_episode in range(episoden):
 env.close()
 # Write observationz to file
 for i in range(episoden - 50, episoden):
-    numpy.savetxt('results/observations_episode_' + str(i) +
+    numpy.savetxt('results/observations'+execution_id+'_episode_' + str(i) +
                   '.txt', observationz[i], delimiter=',')
+
