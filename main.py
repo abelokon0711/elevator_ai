@@ -1,150 +1,141 @@
-from environment import Environment
-from graphics import Graphics
-from time import sleep
-from threading import Thread
-from passenger import Passenger
-
-ENABLE_GRAPHICS = True
-running = True
-
-env = Environment()
-
-import numpy as np
-q_table = np.zeros([21952, 4])
-
-"""Training the agent"""
-
+import gym
+import numpy
 import random
+import os
+import atexit
+import time
 
-# Hyperparameters
-alpha = 0.1
-gamma = 0.6
-epsilon = 0.1
+from gym.envs.registration import registry, register, make, spec
 
-# For plotting metrics
-all_epochs = []
-all_penalties = []
+from keras.models import Sequential
+from keras.layers import Dense
+from keras.optimizers import Adam
 
-for i in range(1, 500001):
-    state = env.reset()
 
-    epochs, penalties, reward, = 0, 0, 0
-    done = False
-    
-    while not done:
-        if random.uniform(0, 1) < epsilon:
-            action = env.action_space.sample() # Explore action space
-        else:
-            action = np.argmax(q_table[state]) # Exploit learned values
+def build_model(input_size, output_size):
+    model = Sequential()
+    # model.add(Dense(128, input_dim=input_size, activation='relu',
+    #                 kernel_initializer='random_uniform', bias_initializer='zeros'))
+    # model.add(Dense(52, activation='relu',
+    #                 kernel_initializer='random_uniform', bias_initializer='zeros'))
+    # model.add(Dense(output_size, activation='sigmoid',
+    #                 kernel_initializer='random_uniform', bias_initializer='zeros'))
+    # model.compile(loss='mse', optimizer=Adam(lr=0.1, beta_1=0.9,
+    #                                          beta_2=0.999, epsilon=None, decay=0.0, amsgrad=False))
+    model.add(Dense(64, input_dim=input_size, activation='relu',
+                    kernel_initializer='random_uniform', bias_initializer='zeros'))
+    model.add(Dense(64, activation='relu',
+                    kernel_initializer='random_uniform', bias_initializer='zeros'))
 
-        next_state, reward, done, info = env.step(action) 
-        
-        old_value = q_table[state, action]
-        next_max = np.max(q_table[next_state])
-        
-        new_value = (1 - alpha) * old_value + alpha * (reward + gamma * next_max)
-        q_table[state, action] = new_value
+    model.add(Dense(output_size, activation='sigmoid',
+                    kernel_initializer='random_uniform', bias_initializer='zeros'))
 
-        if reward == -10:
-            penalties += 1
+    model.compile(loss='mse', optimizer=Adam(lr=0.0001, beta_1=0.9,
+                                             beta_2=0.999, epsilon=None, decay=0.0, amsgrad=False))
+    return model
 
-        state = next_state
-        epochs += 1
-        
-    if i % 100 == 0:
-        print(f"Episode: {i}")
+# https://machinelearningmastery.com/save-load-keras-deep-learning-models/
 
-print("Training finished.\n")
+# id damit wird episoden und model unterscheiden können nach ausführung des skripts
+execution_id = hash(time.time())
 
-"""Evaluate agent's performance after Q-learning"""
 
-if ENABLE_GRAPHICS:
-    gra = Graphics(env)
-    t = Thread(target=gra.start)
-    t.start()
-    sleep(0.5)
+def exit_handler():
+    # save model and weights
+    print('Saving model...')
+    model_json = neural_network.to_json()
+    os.mkdir("models/"+str(execution_id))
+    with open("models/"+ str(execution_id) +"/model.json", "w") as json_file:
+        json_file.write(model_json)
+    neural_network.save_weights("models/"+ str(execution_id) +"/model_weights.h5")
 
-total_epochs, total_penalties = 0, 0
-episodes = 100
+    # Write observationz to file
+    print("Saving episodes")
+    os.mkdir("results/"+str(execution_id))
+    for i in range(aufzeichnungen):
+        numpy.savetxt('results/'+str(execution_id)+'/observations_episode_' + str(i) +
+                    '.txt', observationz[i], delimiter=',')
 
-for _ in range(episodes):
-    state = env.reset()
-    decoded = env.decode(state)
+atexit.register(exit_handler)
 
-    print("----- STATE -----")
-    print(*env.decode(state))
-    print("-----------------")
 
-    for floor in env.floors:
-        floor.waiting_queue = []
-    env.elevators[0].passenger_in_elevator = []
-    next(decoded)
-    env.elevators[0].current_floor = next(decoded)
-    p = Passenger(env, next(decoded), next(decoded))
-    env.floors[p.start_floor].add_person_to_waiting_queue(p)
-    p = Passenger(env, next(decoded), next(decoded))
-    env.floors[p.start_floor].add_person_to_waiting_queue(p)
+register(
+    id='Elevator-v0',
+    entry_point='gym_environment:ElevatorEnv',
+)
 
-    epochs, penalties, reward = 0, 0, 0
-    
-    done = False
-    
-    while not done:
-        action = np.argmax(q_table[state])
-        print(action)
-        if action == 0:
-            if env.elevators[0].current_floor < 6:
-                env.elevators[0].go_up()
-        elif action == 1:
-            if env.elevators[0].current_floor > 0:
-                env.elevators[0].go_down()
-        elif action == 2:
-            if env.elevators[0].is_passenger_waiting_on_current_floor():
-                env.elevators[0].add_passenger_from_current_floor_to_elevator()
-        elif action == 3:
-            env.elevators[0].transfer_passenger_from_elevator_to_current_floor()
+episoden = 1500
+schritte = 200
+zustandvektor_laenge = 61
+aktionvektor_laenge = 3
 
-        state, reward, done, info = env.step(action)
 
-        if reward == -10:
-            penalties += 1
+# Training the model
+env = gym.make('Elevator-v0')
 
-        env.tick()
-        gra.tick()
-        epochs += 1
-        sleep(0.5)
+neural_network = build_model(zustandvektor_laenge, aktionvektor_laenge)
 
-    total_penalties += penalties
-    total_epochs += epochs
-    
-    sleep(0.5)
-    print("done")
+aufzeichnungen = 100
+start_recording_at = episoden - aufzeichnungen
+observationz = numpy.zeros((aufzeichnungen, schritte, zustandvektor_laenge))
 
-print(f"Results after {episodes} episodes:")
-print(f"Average timesteps per episode: {total_epochs / episodes}")
-print(f"Average penalties per episode: {total_penalties / episodes}")
 
-'''
-if ENABLE_GRAPHICS:
-    gra = Graphics(env)
-    t = Thread(target=gra.start)
-    t.start()
-    sleep(0.5)
+for i_episode in range(episoden):
+    observation = env.reset()
 
-try:
-    while running:
-        env.tick()
+    memories = []
+    sum_reward = 0
 
-        if ENABLE_GRAPHICS:
-            if not t.is_alive():
-                running = False
-                break
-            gra.tick()
+    for t in range(schritte):
+        # env.render()
+        if i_episode >= start_recording_at:
+            observationz[i_episode - start_recording_at][t] = numpy.copy(observation)
 
-        sleep(0.5)
+        # print(action)
 
-except KeyboardInterrupt:
-    print("STATISTACS SKR SKR SKAA")
-finally:
-    print("FIREABEND")
-'''
+        prediction = neural_network.predict(
+            observation.reshape(-1, len(observation)))[0]
+
+        # Action mit höchtstem reward finden
+        rewards = [0, 0, 0]
+        for i in range(aktionvektor_laenge):
+            rewards[i] = env.eval(i)[1]
+
+        # Beste Aktion speichern fürs training
+        best_action = rewards.index(max(rewards))
+        best_output = [0, 0, 0]
+        best_output[best_action] = 1
+        memories.append([observation, best_output])
+
+        # print("Actions:")
+        # print("1 with probability of ", prediction[0])
+        # print("2 with probability of ", prediction[1])
+        # print("3 with probability of ", prediction[2])
+        # if i_episode == 99:
+        #     print(rewards)
+        #     print(prediction)
+        #     print(best_output)
+        action = numpy.argmax(prediction)
+        # print(action, observation[0], best_action)
+        # action = env.action_space.sample()
+        observation, reward, done, info = env.step(action)
+
+        sum_reward += reward
+        # print(observation[0])
+
+        if done or reward == -1000000:
+            #print("Episode finished after {} timesteps".format(t))
+            break
+    # Adjust network after training
+
+    X = []
+    y = []
+    for i in range(len(memories)):
+        X.append(memories[i][0])
+        y.append(memories[i][1])
+    if sum_reward >= -1000:
+        print("Sum of Rewards at Episode ", i_episode, ': ', sum_reward)
+    # Train model
+    neural_network.fit([X], [y], verbose=0)  # ,epochs=10, batch_size=1)
+env.close()
+
