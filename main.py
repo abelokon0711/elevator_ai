@@ -36,6 +36,7 @@ def build_model(input_size, output_size):
 
 # https://machinelearningmastery.com/save-load-keras-deep-learning-models/
 
+
 # id damit wird episoden und model unterscheiden können nach ausführung des skripts
 execution_id = hash(time.time())
 
@@ -43,18 +44,28 @@ execution_id = hash(time.time())
 def exit_handler():
     # save model and weights
     print('Saving model...')
+
+    if not os.path.isdir("results/"):
+        os.mkdir("results/")
+
+    if not os.path.isdir("models/"):
+        os.mkdir("models/")
+
     model_json = neural_network.to_json()
     os.mkdir("models/"+str(execution_id))
-    with open("models/"+ str(execution_id) +"/model.json", "w") as json_file:
+    with open("models/" + str(execution_id) + "/model.json", "w") as json_file:
         json_file.write(model_json)
-    neural_network.save_weights("models/"+ str(execution_id) +"/model_weights.h5")
+    neural_network.save_weights(
+        "models/" + str(execution_id) + "/model_weights.h5")
 
     # Write observationz to file
     print("Saving episodes")
+
     os.mkdir("results/"+str(execution_id))
     for i in range(aufzeichnungen):
         numpy.savetxt('results/'+str(execution_id)+'/observations_episode_' + str(i) +
-                    '.txt', observationz[i], delimiter=',')
+                      '.txt', observationz[i], delimiter=',')
+
 
 atexit.register(exit_handler)
 
@@ -64,7 +75,7 @@ register(
     entry_point='gym_environment:ElevatorEnv',
 )
 
-episoden = 1500
+episoden = 100
 schritte = 200
 zustandvektor_laenge = 61
 aktionvektor_laenge = 3
@@ -89,7 +100,8 @@ for i_episode in range(episoden):
     for t in range(schritte):
         # env.render()
         if i_episode >= start_recording_at:
-            observationz[i_episode - start_recording_at][t] = numpy.copy(observation)
+            observationz[i_episode -
+                         start_recording_at][t] = numpy.copy(observation)
 
         # print(action)
 
@@ -138,4 +150,3 @@ for i_episode in range(episoden):
     # Train model
     neural_network.fit([X], [y], verbose=0)  # ,epochs=10, batch_size=1)
 env.close()
-

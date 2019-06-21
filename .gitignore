@@ -2,5 +2,6 @@ __pycache__/
 *.swp
 *.pyc
 .vscode/
-models/*
-results/*
+models/
+results/
+
