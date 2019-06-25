@@ -17,6 +17,11 @@ class ElevatorEnv(gym.Env):
         self.floor_limit = 10
         self.waiting_passangers = 0
 
+        #Index where passenger slots starts
+        self.passenger_start_index = self.elevator_num
+        #Index where first slot of first floor starts  
+        self.floor_start_index =  (self.elevator_num + (self.elevator_limit*self.elevator_num))
+
         self.action_space = spaces.Discrete(3)
         self.observation_space = spaces.Discrete(
             self.elevator_num * self.elevator_limit *
@@ -39,13 +44,103 @@ class ElevatorEnv(gym.Env):
         self.np_random, seed = seeding.np_random(seed)
         return [seed]
 
-    def eval(self, action):
+    # returns true if any passanger is destinated to a upper floor and how many
+    def passengerToUpperFloor(self, state, current_floor):
+        count = 0
+        # TODO code müsste für mehraufzüge angepasst werden
+        for i in range(self.passenger_start_index, self.passenger_start_index+self.elevator_limit):
+            if state[i] > current_floor:
+                count += 1
+        return (count > 0), count
+
+    # returns true if any passanger is destinated to a lower floor and how many
+    def passengerToLowerFloor(self, state, current_floor):
+        count = 0
+        # TODO code müsste für mehraufzüge angepasst werden
+        for i in range(self.passenger_start_index, self.passenger_start_index+self.elevator_limit):
+            if state[i] < current_floor:
+                count += 1
+        return (count > 0), count
+
+    # returns true if any passanger is waiting at a upper floor and how many
+    def passangerAtUpperFloor(self, state, current_floor):
+        count = 0
+        next_floor_index = self.floor_start_index + ((current_floor-1)*self.floor_limit) + self.floor_limit 
+        last_floor_index = self.floor_start_index + (self.floor_num*self.floor_limit)
+
+        for i in range(next_floor_index, last_floor_index):
+            if state[i] != 0:
+                count +=1
+        return (count > 0), count
+    
+     # returns true if any passanger is waiting at a upper floor and how many
+    def passangerAtLowerFloor(self, state, current_floor):
+        count = 0
+        previous_floor_last_index = self.floor_start_index + ((current_floor-1)*self.floor_limit) 
+
+        for i in range(self.floor_start_index, previous_floor_last_index):
+            if state[i] != 0:
+                count +=1
+        return (count > 0), count
+
+    def passangerAtFloor(self, state, floor):
+        count = 0
+        current_floor_index = self.floor_start_index + ((floor -1)*self.floor_limit)
+
+        for i in range(current_floor_index, current_floor_index+self.floor_limit):
+            if state[i] != 0:
+                count += 1
+        return (count > 0), count
+
+    def passengerInElevator(self, state):
+        count = 0
+        for i in range(self.elevator_num, self.elevator_limit):
+            if state[i] != 0:
+                count += 1
+        return (count > 0), count
+
+    # kick out passengers that wanted to get to this floor
+    def unloadPassenger(self, state, floor):
+        count = 0
+        for i in range(self.passenger_start_index, self.passenger_start_index+self.elevator_limit):
+            if state[i] == floor:
+                state[i] = 0
+                count += 1
+        return (count > 0), count
+
+    def nextPassengerSlot(self, state):
+        index = -1
+        for i in range(self.passenger_start_index, self.passenger_start_index+self.elevator_limit):
+            if state[i] == 0:
+                index = i 
+                break
+        return index
+            
+    
+    # Load passengers from given floor
+    # Returns True if atleast a passenger was laoded, how many where loaded, and how many where left at the floor
+    def loadPassenger(self, state, floor):
+        passengers_before_loading = self.passangerAtFloor(state, floor)[1]
+        loaded_passengers = 0
+        current_floor_index = self.floor_start_index + ((floor -1)*self.floor_limit)
+        for i in range(current_floor_index, current_floor_index+self.floor_limit):
+            if state[i] != 0:    
+                free_slot = self.nextPassengerSlot(state)
+                if free_slot != -1:
+                    state[free_slot] = state[i]
+                    state[i] = 0
+                    loaded_passengers += 1
+                elif free_slot == -1:
+                    break
+        return (loaded_passengers > 0), loaded_passengers, (passengers_before_loading - loaded_passengers)
+        
+
+    def nextState(self, action):
         assert self.action_space.contains(
             action), "%r (%s) invalid" % (action, type(action))
         state = copy.copy(self.state)
         current_floor = int(state[0])
-        stockwerk_index = ((current_floor-1) * self.floor_limit) + \
-            1 + self.elevator_limit
+        
         reward = 0
         if action == 0:
             if state[0] == 1:
@@ -53,33 +148,20 @@ class ElevatorEnv(gym.Env):
             else:
                 # check if there is reason to go a floor up
                 # is there a passenger waiting at a lower a floor?
-                passenger_at_lower_floors = False
-                for i in range(1, current_floor):
-                    start = ((current_floor-1) * self.floor_limit) + \
-                        1 + self.elevator_limit
-                    for k in range(0, self.floor_limit):
-                        if state[start+k] > 0:
-                            passenger_at_lower_floors = True
-                        if passenger_at_lower_floors:
-                            break
-                    if passenger_at_lower_floors:
-                        break
+                passenger_at_lower_floors, num_passenger_at_lower_floor = self.passangerAtLowerFloor(state, current_floor)
 
                 # is a passanger inside the elevator destinated to an upper floor?
-                passenger_destinated_to_lower_floors = False
-                for i in range(1, self.elevator_limit+1):
-                    if state[i] < current_floor:
-                        passenger_destinated_to_lower_floors = True
-                        break
+                passenger_to_lower_floors, num_passenger_to_lower_floor = self.passengerToLowerFloor(state, current_floor)
 
                 # shit action m8
-                if not passenger_at_lower_floors and not passenger_destinated_to_lower_floors:
-                    reward -= 10
+                if not passenger_at_lower_floors and not passenger_to_lower_floors:
+                    reward -= 100
 
-                for k in range(0, self.floor_limit):
-                    if self.state[stockwerk_index + k] != 0:
-                        reward -= 10
-                        break
+                if num_passenger_at_lower_floor > 0:
+                    reward += 1
+                
+                if num_passenger_to_lower_floor > 0:
+                    reward += 2
 
                 state[0] -= 1
         elif action == 1:
@@ -89,223 +171,67 @@ class ElevatorEnv(gym.Env):
                 # check if there is reason to go a floor up
 
                 # is there a passenger waiting at a higher a floor?
-                passenger_at_upper_floors = False
-                for i in range(current_floor+1, self.floor_num+1):
-                    start = ((current_floor-1) * self.floor_limit) + \
-                        1 + self.elevator_limit
-                    for k in range(0, self.floor_limit):
-                        if state[start+k] > 0:
-                            passenger_at_upper_floors = True
-                        if passenger_at_upper_floors:
-                            break
-                    if passenger_at_upper_floors:
-                        break
+                passenger_at_upper_floors, num_passenger_at_upper_floor = self.passangerAtUpperFloor(state, current_floor)
 
                 # is a passanger inside the elevator destinated to an upper floor?
-                passenger_destinated_to_upper_floors = False
-                for i in range(1, self.elevator_limit+1):
-                    if state[i] > current_floor:
-                        passenger_destinated_to_upper_floors = True
-                        break
+                passenger_to_upper_floors, num_passenger_to_upper_floor = self.passengerToUpperFloor(state, current_floor)
 
                 # shit action m8
-                if not passenger_at_upper_floors and not passenger_destinated_to_upper_floors:
-                    reward -= 10
-
-                for k in range(0, self.floor_limit):
-                    if self.state[stockwerk_index + k] != 0:
-                        reward -= 10
-                        break
+                if not passenger_at_upper_floors and not passenger_to_upper_floors:
+                    reward -= 100
+                
+                if num_passenger_at_upper_floor > 0:
+                    reward += 1
+                if num_passenger_to_upper_floor > 0:
+                    reward += 2
 
                 state[0] += 1
         elif action == 2:
-            current_floor = state[0]
-            passengers_in_elevator_num = 0
-            passengers_entered = False
+            # Are there any passengers in the elevator that want to leave?
             passengers_left = False
-            # indices to iterate over for passengers in the elevator
-            # state[i] equals passenger destination
-            for i in range(1, self.elevator_limit + 1):
-                if state[i] == 0:
-                    continue
-                if state[i] == current_floor:
-                    state[i] = 0
-                    reward += 100
-                    self.waiting_passangers -= 1
-                    passengers_left = True
-                else:
-                    passengers_in_elevator_num += 1
-            # passengers_in_elevator_num = amount of passengers that did not leave elevator
+            num_passengers_left = 0
+            #print("Passengers in Elevator",self.passengerInElevator(state))
+            if self.passengerInElevator(state)[0]:
+                passengers_left, num_passengers_left = self.unloadPassenger(state, current_floor)
+                # reward -= self.passengerInElevator(state)[1]*1
+                #print("Passengers left Elevator", passengers_left, num_passengers_left)
+                #print("Passengers in Elevator now",self.passengerInElevator(state))
+            
 
-            # indices to iterate over for passengers waiting on the current floor
-            # state[i] equals passenger destination
-            start = ((current_floor-1) * self.floor_limit) + \
-                1 + self.elevator_limit
-            stop = start + self.floor_limit
-            for i in range(int(start), int(stop)):
-
-                if state[i] == 0:
-                    continue
-
-                # if elevator capacity is at max
-                if passengers_in_elevator_num == self.elevator_limit:
-                    reward = -10
-
-                for j in range(
-                        int(start),
-                        int(stop)):
-                    for k in range(1, self.elevator_limit):
-                        if state[k] == 0:
-                            # move passenger into elevator
-                            state[k] = state[j]
-                            state[j] = 0
-                            passengers_entered = True
+            # Check if there are any people waiting at this floor
+            passengers_entered = False
+            num_passengers_entered = 0            
+            num_passenger_left_at_floor = 0
+            if self.passangerAtFloor(state, current_floor)[0]:
+                #print("Passengers at floor", self.passangerAtFloor(state,current_floor)[1])
+                passengers_entered, num_passengers_entered, num_passenger_left_at_floor = self.loadPassenger(state, current_floor)
+                #print("Passengers entered Elevator", passengers_entered, num_passengers_entered)
+                #print("Passengers left at floor", num_passenger_left_at_floor)
+                #print("Passengers in Elevator now",self.passengerInElevator(state))
 
             if passengers_entered == False and passengers_left == False:
-                reward = -2
+                reward = -1000
+                #print("No one left or entered")
 
-        if reward == 0:
-            reward = -1
+            reward += num_passengers_left*10
+            reward += num_passengers_entered*5
+            reward -= num_passenger_left_at_floor
+
 
         done = False
         if self.waiting_passangers == 0:
             done = True
             reward += 400
-        return np.array(state), reward, done, {}
+        return state, reward, done, {}
+
+    def eval(self, action):
+        state, reward, done, obj = self.nextState(action)
+        return np.array(state), reward, done, obj
 
     def step(self, action):
-        assert self.action_space.contains(
-            action), "%r (%s) invalid" % (action, type(action))
-        state = self.state
-        current_floor = int(state[0])
-        stockwerk_index = ((current_floor-1) * self.floor_limit) + \
-            1 + self.elevator_limit
-        reward = 0
-        if action == 0:
-            if state[0] == 1:
-                reward -= 1000000
-            else:
-                # check if there is reason to go a floor up
-
-                # is there a passenger waiting at a lower a floor?
-                passenger_at_lower_floors = False
-                for i in range(1, current_floor):
-                    start = ((current_floor-1) * self.floor_limit) + \
-                        1 + self.elevator_limit
-                    for k in range(0, self.floor_limit):
-                        if state[start+k] > 0:
-                            passenger_at_lower_floors = True
-                        if passenger_at_lower_floors:
-                            break
-                    if passenger_at_lower_floors:
-                        break
-
-                # is a passanger inside the elevator destinated to an upper floor?
-                passenger_destinated_to_lower_floors = False
-                for i in range(1, self.elevator_limit+1):
-                    if state[i] < current_floor:
-                        passenger_destinated_to_lower_floors = True
-                        break
-
-                # shit action m8
-                if not passenger_at_lower_floors and not passenger_destinated_to_lower_floors:
-                    reward -= 10
-
-                for k in range(0, self.floor_limit):
-                    if self.state[stockwerk_index + k] != 0:
-                        reward -= 10
-                        break
-
-                state[0] -= 1
-        elif action == 1:
-            if state[0] == self.floor_num:
-                reward -= 1000000
-            else:
-                # check if there is reason to go a floor up
-
-                # is there a passenger waiting at a higher a floor?
-                passenger_at_upper_floors = False
-                for i in range(current_floor+1, self.floor_num+1):
-                    start = ((current_floor-1) * self.floor_limit) + \
-                        1 + self.elevator_limit
-                    for k in range(0, self.floor_limit):
-                        if state[start+k] > 0:
-                            passenger_at_upper_floors = True
-                        if passenger_at_upper_floors:
-                            break
-                    if passenger_at_upper_floors:
-                        break
-
-                # is a passanger inside the elevator destinated to an upper floor?
-                passenger_destinated_to_upper_floors = False
-                for i in range(1, self.elevator_limit+1):
-                    if state[i] > current_floor:
-                        passenger_destinated_to_upper_floors = True
-
-                # shit action m8
-                if not passenger_at_upper_floors and not passenger_destinated_to_upper_floors:
-                    reward -= 10
-
-                for k in range(0, self.floor_limit):
-                    if self.state[stockwerk_index + k] != 0:
-                        reward -= 10
-                        break
-
-                state[0] += 1
-        elif action == 2:
-            passengers_in_elevator_num = 0
-            passengers_entered = False
-            passengers_left = False
-            # indices to iterate over for passengers in the elevator
-            # state[i] equals passenger destination
-            for i in range(1, self.elevator_limit + 1):
-                if state[i] == 0:
-                    continue
-                if state[i] == current_floor:
-                    state[i] = 0
-                    reward += 100
-                    self.waiting_passangers -= 1
-                    passengers_left = True
-                else:
-                    passengers_in_elevator_num += 1
-            # passengers_in_elevator_num = amount of passengers that did not leave elevator
-
-            # indices to iterate over for passengers waiting on the current floor
-            # state[i] equals passenger destination
-            start = ((current_floor-1) * self.floor_limit) + \
-                1 + self.elevator_limit
-            stop = start + self.floor_limit
-            for i in range(int(start), int(stop)):
-
-                if state[i] == 0:
-                    continue
-
-                # if elevator capacity is at max
-                if passengers_in_elevator_num == self.elevator_limit:
-                    reward = -10
-
-                for j in range(
-                        int(start),
-                        int(stop)):
-                    for k in range(1, self.elevator_limit):
-                        if state[k] == 0:
-                            # move passenger into elevator
-                            state[k] = state[j]
-                            state[j] = 0
-                            passengers_entered = True
-
-            if passengers_entered == False and passengers_left == False:
-                reward = -10
-
-        if reward == 0:
-            reward = -1
-
-        done = False
-        if self.waiting_passangers == 0:
-            done = True
-            reward += 40
+        state, reward, done, obj = self.nextState(action)
         self.state = state
-        return np.array(state), reward, done, {}
+        return np.array(state), reward, done, obj
 
     def reset(self):
         # set here waiting_passangers
