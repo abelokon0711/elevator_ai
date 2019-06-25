@@ -4,6 +4,7 @@ from gym import spaces, logger
 from gym.utils import seeding
 import numpy as np
 import copy
+import queue
 
 import pyglet
 from pyglet import gl
@@ -32,6 +33,8 @@ class ElevatorEnv(gym.Env):
             + (self.elevator_num * self.elevator_limit)
             + (self.floor_limit*self.floor_num)
         )
+
+        self.stateQueue = queue.Queue(maxsize=4)
 
         self.seed(10)
         self.viewer = None
@@ -231,6 +234,19 @@ class ElevatorEnv(gym.Env):
     def step(self, action):
         state, reward, done, obj = self.nextState(action)
         self.state = state
+
+        # Push first in queue out and add new state as last in queue
+        if self.stateQueue.full():
+            self.stateQueue.get()
+        self.stateQueue.put(copy.copy(self.state))
+
+        # If queue full start checking for oscillation
+        if self.stateQueue.full():
+            queueList = np.asarray(list(self.stateQueue.queue))
+            if not np.array_equal(queueList[0], queueList[1]): 
+                if np.array_equal(queueList[0], queueList[2]) and np.array_equal(queueList[1], queueList[3]):
+                    reward -= 1000000
+
         return np.array(state), reward, done, obj
 
     def reset(self):
