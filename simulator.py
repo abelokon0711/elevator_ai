@@ -8,6 +8,8 @@ from numpy import loadtxt
 
 def main(parse_args=True, episode_to_load=1, playback_speed_factor=10, end_episode=1):
     episodes = []
+    actions = []
+    rewards = []
     if parse_args:
         parser = argparse.ArgumentParser(
             description='Replay training process.')
@@ -27,20 +29,34 @@ def main(parse_args=True, episode_to_load=1, playback_speed_factor=10, end_episo
             end_episode = args.end_episode
 
     for i in range(episode_to_load, end_episode + 1):
-        path = "results/"+ execution_folder+"/observations_episode_"+ str(i) + ".txt"
-        episodes.append(loadtxt(path, delimiter=','))
+        path_observations = "results/"+ execution_folder+"/observations_episode_"+ str(i) + ".txt"
+        episodes.append(loadtxt(path_observations, delimiter=','))
+
+        path_actions = "results/"+ execution_folder+"/actions_episode_"+ str(i) + ".txt"
+        actions.append(loadtxt(path_actions, delimiter=','))
+
+        path_rewards = "results/"+ execution_folder+"/rewards_episode_"+ str(i) + ".txt"
+        rewards.append(loadtxt(path_rewards, delimiter=','))
 
     env = gym.make('Elevator-v0')
     env.reset()
     for index, loaded_episode in enumerate(episodes):
         print('showing episode', index)
-        for state in loaded_episode:
-            env.state = state
-            if not state[1:].any():
+        for i in range(0, len(loaded_episode)):
+            env.state = loaded_episode[i]
+            print("Action:",actions[index][i],"Reward:",rewards[index][i])
+            if not loaded_episode[i][1:].any():
                 continue
-            #print(state)
+            print(env.state)
             env.render()
             sleep(1/playback_speed_factor)
+        # for state in loaded_episode:
+        #     env.state = state
+        #     if not state[1:].any():
+        #         continue
+        #     #print(state)
+        #     env.render()
+        #     sleep(1/playback_speed_factor)
     env.close()
 
 
