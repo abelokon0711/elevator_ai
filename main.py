@@ -81,7 +81,7 @@ register(
 )
 
 episoden = 5000
-schritte = 200
+schritte = 20
 zustandvektor_laenge = 61
 aktionvektor_laenge = 3
 
@@ -100,6 +100,7 @@ rewardz = numpy.zeros((aufzeichnungen, schritte, 3))
 replay_buffer_X = []
 replay_buffer_y = []
 
+last_episode = -1
 high_score = 0
 
 for i_episode in range(episoden):
@@ -184,5 +185,6 @@ for i_episode in range(episoden):
         print("Highscore: ",high_score,"|   Sum of Rewards at Episode ", i_episode, ': ', sum_reward)
     # Train model
     neural_network.fit([X], [y], verbose=0)  # ,epochs=10, batch_size=1)
+    last_episode += 1
     #neural_network.fit([replay_buffer_X], [replay_buffer_y], verbose=0)  # ,epochs=10, batch_size=1)
 env.close()
