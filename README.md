@@ -1,0 +1,56 @@
+# ElevatorAI
+
+The project ElevatorAI aims for the goal to train software agents, used for control and coordination of multiple elevators.
+This project originates from the lecture Applied Artifical Intelligence taught at the University of Applied Sciences Hochschule Esslingen, which was developed by team No. 3.
+
+## Team No. 3:
+ * Alexander Putin
+ * Mohamed Karim Ben Dhifallah
+ * Max Haussch
+ * Oleg Tovarish
+ * Firat Susan
+
+## Getting Started
+These instruction will briefly explain how to setup the project on a local machine.
+
+### Setup on local machine
+Create a directoy for this project and clone it via git
+```sh
+git clone https://github.com/abelokon955/elevator_ai.git
+cd ./elevator_ai
+```
+Next the required packages have to be installed
+```sh
+pip install -r requirements.txt
+```
+
+### Defining a model
+The first thing to do is the definition of a model.
+There are two options available:
+ * Creating a new model on startup
+ * Loading an exisiting model
+
+#### Defining a new model
+When the training is initiated and no paramters are specified for the main.py script, a new model will be automatically generated according to the build_model function inside main.py.
+```py
+def build_model(input_size, output_size):
+    model = ...Keras Model...
+    model.add(...)
+    ...
+    model.add(...)
+    model.compile(...)
+    return model
+```
+For a custom definition just change this section of code to your desires.
+
+### Using an existing model
+To use an exisiting model you need to provide the model inside a seperate direcotry in `.\models\<model_name>\`. There the model defintion has to be contained inside a file named `model.json`, which should be loadable by keras. The weights need to be provided aswell, as a file named `model_weights.h5`.
+
+When starting execution of the main.py you have to provided via arguments the `<model_name>` as shown.
+```sh
+python main.py <model_name> <True|False>
+```
+Additionaly you have to provide an argument if you want to train this model.
+
+
+
