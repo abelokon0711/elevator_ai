@@ -52,5 +52,26 @@ python main.py <model_name> <True|False>
 ```
 Additionaly you have to provide an argument if you want to train this model.
 
+# Setting
+In order to setup the environment for your needs, you have to take a at some specific values.
+In gym_environment.py:
+```py
+class ElevatorEnv(gym.Env):
+    def __init__(self):
+        self.elevator_num = # Number of elevators in the environment
+        self.elevator_limit = # Capacity for each elevator
+        self.floor_num = # Number of floors in the environment
+        self.floor_limit = # Capacity for each floor
+        self.waiting_passangers = # Waiting passengers in environnment
+```
+
+In main.py:
+```py
+episoden = # Number of episodes for training
+schritte = # Number of maximums steps in each episode
+zustandvektor_laenge = # Length of the state vector
+aktionvektor_laenge = # Length of the action vector
+```
+
 
 
