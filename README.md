@@ -52,8 +52,9 @@ python main.py <model_name> <True|False>
 ```
 Additionaly you have to provide an argument if you want to train this model.
 
-# Setting
+# Settings
 In order to setup the environment for your needs, you have to take a at some specific values.
+
 In gym_environment.py:
 ```py
 class ElevatorEnv(gym.Env):
@@ -73,5 +74,10 @@ zustandvektor_laenge = # Length of the state vector
 aktionvektor_laenge = # Length of the action vector
 ```
 
-
-
+# Viewing result
+The main.py scripts stores the latest 100 episodes inside the `\results\` folder. In that will be a folder named after the execution id. For each execution there will be an execution id generated from the hash of the time of exeuction.
+Using the simulator.py you can render a series of the last 100 episodes and watch the agent interact with the environment.
+```sh
+python simulator.py <execution id> <startEpisode> --speed <speed> --end_episode <lastEpisode>
+```
+Note: The --speed requires an floating point value greater 0.
