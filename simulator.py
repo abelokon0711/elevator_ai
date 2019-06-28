@@ -39,16 +39,18 @@ def main(parse_args=True, episode_to_load=1, playback_speed_factor=10, end_episo
         rewards.append(loadtxt(path_rewards, delimiter=','))
 
     env = gym.make('Elevator-v0')
+    env.elevator_num = 2
     env.reset()
     for index, loaded_episode in enumerate(episodes):
-        print('showing episode', index)
+        print('Episode', index)
         for i in range(0, len(loaded_episode)):
             env.state = loaded_episode[i]
+            print("Step", i)
             print("Action:",actions[index][i],"Reward:",rewards[index][i])
+            print(env.state)
             if not loaded_episode[i][1:].any():
                 continue
-            print(env.state)
-            env.render()
+            env.render(episode=index,step=i)
             sleep(1/playback_speed_factor)
         # for state in loaded_episode:
         #     env.state = state
