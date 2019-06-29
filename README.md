@@ -4,9 +4,9 @@ The project ElevatorAI aims for the goal to train software agents, used for cont
 This project originates from the lecture Applied Artifical Intelligence taught at the University of Applied Sciences Hochschule Esslingen, which was developed by team No. 3.
 
 ## Team No. 3:
- * Alexander Putin
+ * Alexander Belokon
  * Mohamed Karim Ben Dhifallah
- * Max Haussch
+ * Max Hausch
  * Oleg Tovarish
  * Firat Susan
 
